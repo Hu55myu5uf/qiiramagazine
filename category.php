@@ -1,6 +1,6 @@
 <?php
-include 'db.php';
-include 'includes/header.php';
+include __DIR__ . '/db.php';
+include __DIR__ . '/includes/header.php';
 
 // Get category from URL
 $category_slug = isset($_GET['cat']) ? trim($_GET['cat']) : '';
@@ -23,10 +23,12 @@ if(!empty($category_slug)) {
     <!-- Category Header -->
     <div class="row">
         <div class="col-12">
-            <div class="card bg-dark text-white mb-4">
-                <div class="card-body text-center py-4">
-                    <h1><i class="fas fa-folder-open"></i> <?php echo htmlspecialchars($category_name); ?></h1>
-                    <p class="mb-0">Browse articles in this category</p>
+            <div class="hero-slide mb-4" style="background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('images/qira/bg<?php echo rand(1,8); ?>.<?php echo (rand(0,1) ? 'png' : 'jpg'); ?>'); border-radius: 15px; min-height: 300px !important;">
+                <div class="d-flex align-items-center justify-content-center h-100 hero-content" style="min-height: 300px !important;">
+                    <div class="text-center text-white p-4">
+                        <h1 class="display-3 font-weight-bold"><i class="fas fa-folder-open"></i> <?php echo htmlspecialchars($category_name); ?></h1>
+                        <p class="lead hero-lead-text">Browse articles in this category</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -36,7 +38,7 @@ if(!empty($category_slug)) {
     <div class="row mb-4">
         <div class="col-12">
             <div class="btn-group flex-wrap" role="group">
-                <a href="category.php" class="btn <?php echo empty($category_slug) ? 'btn-primary' : 'btn-outline-primary'; ?>">
+                <a href="category.php" class="btn <?php echo empty($category_slug) ? '' : 'btn-dark'; ?>" style="border-radius: 20px; margin: 3px; <?php echo empty($category_slug) ? 'background: #d4af37; color: #000;' : ''; ?>">
                     All
                 </a>
                 <?php
@@ -44,7 +46,7 @@ if(!empty($category_slug)) {
                 while($cat = $cats->fetch_assoc()):
                 ?>
                 <a href="category.php?cat=<?php echo htmlspecialchars($cat['category_slug']); ?>" 
-                   class="btn <?php echo ($category_slug == $cat['category_slug']) ? 'btn-primary' : 'btn-outline-primary'; ?>">
+                   class="btn <?php echo ($category_slug == $cat['category_slug']) ? '' : 'btn-dark'; ?>" style="border-radius: 20px; margin: 3px; <?php echo ($category_slug == $cat['category_slug']) ? 'background: #d4af37; color: #000;' : ''; ?>">
                     <?php echo htmlspecialchars($cat['category_name']); ?>
                 </a>
                 <?php endwhile; ?>
@@ -68,35 +70,41 @@ if(!empty($category_slug)) {
         if($posts->num_rows > 0):
             while($post = $posts->fetch_assoc()):
         ?>
-        <div class="col-md-4 mb-4">
-            <div class="card h-100">
+        <div class="col-md-4 col-12 mb-4">
+            <a href="post.php?id=<?php echo $post['post_id']; ?>" class="text-decoration-none">
+            <div class="card h-100 shadow-sm article-card">
                 <?php if(!empty($post['post_image'])): ?>
-                    <img src="<?php echo htmlspecialchars($post['post_image']); ?>" 
-                         class="card-img-top" 
-                         style="height: 200px; object-fit: cover;"
-                         alt="<?php echo htmlspecialchars($post['post_title']); ?>">
+                    <div class="card-img-wrapper">
+                        <img src="<?php echo htmlspecialchars($post['post_image']); ?>" 
+                             class="card-img-top card-img-zoom"
+                             alt="<?php echo htmlspecialchars($post['post_title']); ?>">
+                    </div>
                 <?php else: ?>
-                    <div class="card-img-top bg-secondary d-flex align-items-center justify-content-center" style="height: 200px;">
+                    <div class="card-img-top bg-secondary d-flex align-items-center justify-content-center default-article-img">
                         <i class="fas fa-image fa-3x text-white"></i>
                     </div>
                 <?php endif; ?>
                 
                 <div class="card-body">
-                    <span class="badge badge-info mb-2"><?php echo htmlspecialchars($post['category'] ?? 'general'); ?></span>
-                    <h5 class="card-title"><?php echo htmlspecialchars($post['post_title']); ?></h5>
-                    <p class="card-text text-muted">
+                    <span class="badge mb-2 badge-gold"><?php echo ucfirst(htmlspecialchars($post['category'] ?? 'general')); ?></span>
+                    <h5 class="card-title font-weight-bold text-dark"><?php echo htmlspecialchars($post['post_title']); ?></h5>
+                    <p class="card-text text-muted small">
                         <?php echo htmlspecialchars(substr($post['post_description'], 0, 100)) . '...'; ?>
                     </p>
                 </div>
                 
-                <div class="card-footer">
-                    <small class="text-muted">
-                        <i class="fas fa-calendar"></i> <?php echo date("M d, Y", strtotime($post['post_date'])); ?>
-                        &nbsp;|&nbsp;
-                        <i class="fas fa-heart text-danger"></i> <?php echo $post['post_likes']; ?>
-                    </small>
+                <div class="card-footer bg-white border-0">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">
+                            <i class="fas fa-calendar"></i> <?php echo date("M d, Y", strtotime($post['post_date'])); ?>
+                        </small>
+                        <small class="text-muted">
+                            <i class="fas fa-heart icon-gold"></i> <?php echo $post['post_likes']; ?>
+                        </small>
+                    </div>
                 </div>
             </div>
+            </a>
         </div>
         <?php 
             endwhile;
@@ -111,4 +119,4 @@ if(!empty($category_slug)) {
     </div>
 </div>
 
-<?php include 'includes/footer.php'; ?>
+<?php include __DIR__ . '/includes/footer.php'; ?>

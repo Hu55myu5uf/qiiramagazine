@@ -1,6 +1,13 @@
 <?php
 session_start();
+// Store role to decide where to redirect after logout
+$role = $_SESSION['role'] ?? '';
 session_destroy();
-header("Location: index.php");
+
+if ($role === 'editor') {
+    header("Location: admin/editor_login.php");
+} else {
+    header("Location: admin/login.php");
+}
 exit();
 ?>

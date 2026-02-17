@@ -1,29 +1,38 @@
 <?php
-include 'db.php';
-include 'includes/header.php';
+include __DIR__ . '/../includes/csrf.php';
+
+// Start session if header is moved
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 // Access Control
-if(!isset($_SESSION['role']) || $_SESSION['role'] != 'admin') {
-    header("Location: admin_login.php");
+if(!isset($_SESSION['role']) || ($_SESSION['role'] != 'admin' && $_SESSION['role'] != 'editor')) {
+    header("Location: login.php");
     exit();
 }
+
+include __DIR__ . '/../includes/header.php';
 
 $message = "";
 
 // Handle Form Submissions
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $action = $_POST['action'] ?? '';
+    if (!verify_csrf_token()) {
+        $message = "<div class='alert alert-danger'>Invalid session. Please refresh and try again.</div>";
+    } else {
+        $action = $_POST['action'] ?? '';
     
-    if ($action == "add") {
+        if ($action == "add") {
         $post_title = trim($_POST['post_title'] ?? '');
         $post_description = trim($_POST['post_description'] ?? '');
         $category = trim($_POST['category'] ?? 'general');
-        $author_id = $_SESSION['username'];
+        $author_id = ($_SESSION['role'] == 'admin') ? $_SESSION['username'] : $_SESSION['editor_username'];
         
         // Handle image upload
         $post_image = '';
         if(isset($_FILES['post_image']) && $_FILES['post_image']['error'] == 0) {
-            $target_dir = "images/posts/";
+            $target_dir = "../images/posts/";
             
             // Create directory if it doesn't exist
             if (!file_exists($target_dir)) {
@@ -36,9 +45,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             if(in_array($file_extension, $allowed_extensions)) {
                 $new_filename = uniqid() . '.' . $file_extension;
                 $target_file = $target_dir . $new_filename;
+                $db_path = "images/posts/" . $new_filename; // Path to store in DB
                 
                 if(move_uploaded_file($_FILES['post_image']['tmp_name'], $target_file)) {
-                    $post_image = $target_file;
+                    $post_image = $db_path;
                 }
             } else {
                 $message = "<div class='alert alert-danger'>Invalid image format. Allowed: jpg, jpeg, png, gif, webp</div>";
@@ -68,7 +78,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         if($post_id > 0 && !empty($post_title) && !empty($post_description)) {
             // Check for new image upload
             if(isset($_FILES['post_image']) && $_FILES['post_image']['error'] == 0) {
-                $target_dir = "images/posts/";
+                $target_dir = "../images/posts/";
                 if (!file_exists($target_dir)) {
                     mkdir($target_dir, 0777, true);
                 }
@@ -79,10 +89,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 if(in_array($file_extension, $allowed_extensions)) {
                     $new_filename = uniqid() . '.' . $file_extension;
                     $target_file = $target_dir . $new_filename;
+                    $db_path = "images/posts/" . $new_filename;
                     
                     if(move_uploaded_file($_FILES['post_image']['tmp_name'], $target_file)) {
                         $stmt = $conn->prepare("UPDATE post_table SET post_title = ?, post_description = ?, post_image = ?, category = ? WHERE post_id = ?");
-                        $stmt->bind_param("ssssi", $post_title, $post_description, $target_file, $category, $post_id);
+                        $stmt->bind_param("ssssi", $post_title, $post_description, $db_path, $category, $post_id);
                     }
                 }
             } else {
@@ -107,6 +118,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             
             if($stmt->execute()) {
                 $message = "<div class='alert alert-warning'>Post deleted.</div>";
+            }
+            $stmt->close();
             }
             $stmt->close();
         }
@@ -137,14 +150,14 @@ if(isset($_GET['edit']) && intval($_GET['edit']) > 0) {
 }
 ?>
 
-<div class="container-fluid" style="margin-top: 20px;">
+<div class="container-fluid admin-container" style="margin-top: 30px; margin-bottom: 50px;">
     <div class="row">
         <!-- Post Form -->
-        <div class="col-md-5">
-            <div class="card">
-                <div class="card-header bg-dark text-white">
+        <div class="col-xl-4 col-lg-5 col-md-12 mb-4">
+            <div class="card shadow-lg border-0" style="border-radius: 15px;">
+                <div class="card-header text-white" style="background: #000; border-radius: 15px 15px 0 0;">
                     <h4 class="mb-0">
-                        <i class="fas fa-edit"></i> 
+                        <i class="fas fa-edit" style="color: #d4af37;"></i> 
                         <?php echo $edit_post ? 'Edit Post' : 'Create New Post'; ?>
                     </h4>
                 </div>
@@ -152,23 +165,25 @@ if(isset($_GET['edit']) && intval($_GET['edit']) > 0) {
                     <?php echo $message; ?>
                     
                     <form method="POST" enctype="multipart/form-data">
+                        <?php csrf_field(); ?>
                         <?php if($edit_post): ?>
                             <input type="hidden" name="post_id" value="<?php echo $edit_post['post_id']; ?>">
                         <?php endif; ?>
                         
                         <div class="form-group">
-                            <label><i class="fas fa-heading"></i> Post Title</label>
+                            <label class="font-weight-bold">Post Title</label>
                             <input type="text" 
                                    name="post_title" 
-                                   class="form-control" 
+                                   class="form-control form-control-lg" 
                                    placeholder="Enter post title"
                                    value="<?php echo htmlspecialchars($edit_post['post_title'] ?? ''); ?>"
+                                   style="border-radius: 10px;"
                                    required>
                         </div>
                         
                         <div class="form-group">
-                            <label><i class="fas fa-folder"></i> Category</label>
-                            <select name="category" class="form-control">
+                            <label class="font-weight-bold">Category</label>
+                            <select name="category" class="form-control form-control-lg" style="border-radius: 10px;">
                                 <?php foreach($categories as $cat): ?>
                                     <option value="<?php echo htmlspecialchars($cat['category_slug']); ?>"
                                             <?php echo (($edit_post['category'] ?? '') == $cat['category_slug']) ? 'selected' : ''; ?>>
@@ -179,38 +194,45 @@ if(isset($_GET['edit']) && intval($_GET['edit']) > 0) {
                         </div>
                         
                         <div class="form-group">
-                            <label><i class="fas fa-image"></i> Post Image</label>
-                            <input type="file" name="post_image" class="form-control-file">
+                            <label class="font-weight-bold">Post Image</label>
+                            <div class="custom-file">
+                                <input type="file" name="post_image" class="custom-file-input" id="customFile">
+                                <label class="custom-file-label" for="customFile" style="border-radius: 10px;">Choose file...</label>
+                            </div>
                             <?php if($edit_post && !empty($edit_post['post_image'])): ?>
-                                <small class="text-muted">Current: <?php echo htmlspecialchars($edit_post['post_image']); ?></small>
+                                <div class="mt-2">
+                                    <small class="text-muted">Current:</small><br>
+                                    <img src="<?php echo htmlspecialchars($edit_post['post_image']); ?>" height="60" style="border-radius: 5px;">
+                                </div>
                             <?php endif; ?>
                         </div>
                         
                         <div class="form-group">
-                            <label><i class="fas fa-align-left"></i> Post Content</label>
+                            <label class="font-weight-bold">Post Content</label>
                             <textarea name="post_description" 
                                       class="form-control" 
                                       rows="8" 
                                       placeholder="Write your post content here..."
+                                      style="border-radius: 10px;"
                                       required><?php echo htmlspecialchars($edit_post['post_description'] ?? ''); ?></textarea>
                         </div>
                         
                         <div class="row">
                             <?php if($edit_post): ?>
                                 <div class="col-6">
-                                    <button type="submit" name="action" value="update" class="btn btn-warning btn-block btn-lg">
+                                    <button type="submit" name="action" value="update" class="btn btn-block btn-lg" style="background: #d4af37; color: #000; border-radius: 10px;">
                                         <i class="fas fa-save"></i> Update
                                     </button>
                                 </div>
                                 <div class="col-6">
-                                    <a href="manage_posts.php" class="btn btn-secondary btn-block btn-lg">
+                                    <a href="manage_posts.php" class="btn btn-dark btn-block btn-lg" style="border-radius: 10px;">
                                         <i class="fas fa-times"></i> Cancel
                                     </a>
                                 </div>
                             <?php else: ?>
                                 <div class="col-12">
-                                    <button type="submit" name="action" value="add" class="btn btn-success btn-block btn-lg">
-                                        <i class="fas fa-plus"></i> Create Post
+                                    <button type="submit" name="action" value="add" class="btn btn-block btn-lg" style="background: #000; color: #fff; border-radius: 10px;">
+                                        <i class="fas fa-plus" style="color: #d4af37;"></i> Create Post
                                     </button>
                                 </div>
                             <?php endif; ?>
@@ -218,19 +240,20 @@ if(isset($_GET['edit']) && intval($_GET['edit']) > 0) {
                     </form>
                 </div>
             </div>
-            <br>
-            <a href="index.php"><i class="fas fa-arrow-left"></i> Back to Home</a>
+            <div class="text-center mt-3">
+                <a href="../index.php" class="text-muted"><i class="fas fa-arrow-left"></i> Back to Home</a>
+            </div>
         </div>
         
         <!-- Posts List -->
-        <div class="col-md-7">
-            <div class="card">
-                <div class="card-header bg-dark text-white">
-                    <h4 class="mb-0"><i class="fas fa-list"></i> All Posts</h4>
+        <div class="col-xl-8 col-lg-7 col-md-12">
+            <div class="card shadow-lg border-0" style="border-radius: 15px;">
+                <div class="card-header text-white" style="background: #000; border-radius: 15px 15px 0 0;">
+                    <h4 class="mb-0"><i class="fas fa-list" style="color: #d4af37;"></i> All Posts</h4>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
-                        <table class="table table-striped table-bordered" id="datatable">
+                        <table class="table table-hover" id="datatable">
                             <thead class="thead-dark">
                                 <tr>
                                     <th>ID</th>
@@ -249,14 +272,15 @@ if(isset($_GET['edit']) && intval($_GET['edit']) > 0) {
                                 <tr>
                                     <td><?php echo $post['post_id']; ?></td>
                                     <td><?php echo htmlspecialchars(substr($post['post_title'], 0, 40)) . (strlen($post['post_title']) > 40 ? '...' : ''); ?></td>
-                                    <td><span class="badge badge-info"><?php echo htmlspecialchars($post['category'] ?? 'general'); ?></span></td>
+                                    <td><span class="badge badge-dark"><?php echo htmlspecialchars($post['category'] ?? 'general'); ?></span></td>
                                     <td><?php echo date("M d, Y", strtotime($post['post_date'])); ?></td>
-                                    <td><span class="badge badge-primary"><?php echo $post['post_likes']; ?></span></td>
+                                    <td><span class="badge badge-warning" style="background: #d4af37; color: #000;"><?php echo $post['post_likes']; ?></span></td>
                                     <td>
-                                        <a href="manage_posts.php?edit=<?php echo $post['post_id']; ?>" class="btn btn-sm btn-warning">
+                                        <a href="manage_posts.php?edit=<?php echo $post['post_id']; ?>" class="btn btn-sm" style="background: #d4af37; color: #000;">
                                             <i class="fas fa-edit"></i>
                                         </a>
                                         <form method="POST" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this post?');">
+                                            <?php csrf_field(); ?>
                                             <input type="hidden" name="post_id" value="<?php echo $post['post_id']; ?>">
                                             <button type="submit" name="action" value="delete" class="btn btn-sm btn-danger">
                                                 <i class="fas fa-trash"></i>
@@ -279,7 +303,16 @@ if(isset($_GET['edit']) && intval($_GET['edit']) > 0) {
         $('#datatable').DataTable({
             "order": [[ 0, "desc" ]]
         });
+
+        // Display filename on selection
+        $(".custom-file-input").on("change", function() {
+            var fileName = $(this).val().split("\\").pop();
+            $(this).siblings(".custom-file-label").addClass("selected").html(fileName);
+        });
     });
 </script>
 
-<?php include 'includes/footer.php'; ?>
+<?php include __DIR__ . '/../includes/footer.php'; ?>
+
+
+
