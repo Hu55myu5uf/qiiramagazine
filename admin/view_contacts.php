@@ -17,23 +17,29 @@ include __DIR__ . '/../includes/header.php';
 
 $message = "";
 
+// Handle Form Submissions
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $action = $_POST['action'] ?? '';
+    $id = intval($_POST['id'] ?? 0);
+
     if (!verify_csrf_token()) {
         $message = "<div class='alert alert-danger'>Invalid session. Please refresh and try again.</div>";
     } elseif (($action == "mark_read" || $action == "delete") && $id > 0) {
         if ($action == "mark_read") {
             $stmt = $conn->prepare("UPDATE contact_submissions SET is_read = 1 WHERE id = ?");
-        $stmt->bind_param("i", $id);
-        if($stmt->execute()) {
-            $message = "<div class='alert alert-success'>Marked as read.</div>";
+            $stmt->bind_param("i", $id);
+            if($stmt->execute()) {
+                $message = "<div class='alert alert-success'>Marked as read.</div>";
+            }
+            $stmt->close();
+        } elseif ($action == "delete") {
+            $stmt = $conn->prepare("DELETE FROM contact_submissions WHERE id = ?");
+            $stmt->bind_param("i", $id);
+            if($stmt->execute()) {
+                $message = "<div class='alert alert-warning'>Message deleted.</div>";
+            }
+            $stmt->close();
         }
-        $stmt->close();
-    } elseif ($action == "delete" && $id > 0) {
-        $stmt = $conn->prepare("DELETE FROM contact_submissions WHERE id = ?");
-        $stmt->bind_param("i", $id);
-        if($stmt->execute()) {
-            $message = "<div class='alert alert-warning'>Message deleted.</div>";
-        }
-        $stmt->close();
     }
 }
 

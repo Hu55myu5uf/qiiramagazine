@@ -68,37 +68,38 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         } else {
             $message = "<div class='alert alert-warning'>Full name and email are required.</div>";
         }
-    } elseif ($action == "delete") {
-        $user_id = intval($_POST['user_id'] ?? 0);
-        if($user_id > 0) {
-            $stmt = $conn->prepare("DELETE FROM users WHERE id = ?");
-            $stmt->bind_param("i", $user_id);
-            if($stmt->execute()) {
-                $message = "<div class='alert alert-warning'>User Deleted.</div>";
-            } else {
-                $message = "<div class='alert alert-danger'>Error deleting user: " . htmlspecialchars($stmt->error) . "</div>";
+        } elseif ($action == "delete") {
+            $user_id = intval($_POST['user_id'] ?? 0);
+            if($user_id > 0) {
+                $stmt = $conn->prepare("DELETE FROM users WHERE id = ?");
+                $stmt->bind_param("i", $user_id);
+                if($stmt->execute()) {
+                    $message = "<div class='alert alert-warning'>User Deleted.</div>";
+                } else {
+                    $message = "<div class='alert alert-danger'>Error deleting user: " . htmlspecialchars($stmt->error) . "</div>";
+                }
+                $stmt->close();
             }
-            $stmt->close();
-        }
-    } elseif ($action == "suspend") {
-        $user_id = intval($_POST['user_id'] ?? 0);
-        if($user_id > 0) {
-            $stmt = $conn->prepare("UPDATE users SET is_suspended = 1 WHERE id = ?");
-            $stmt->bind_param("i", $user_id);
-            if($stmt->execute()) {
-                $message = "<div class='alert alert-warning'>User Suspended.</div>";
+        } elseif ($action == "suspend") {
+            $user_id = intval($_POST['user_id'] ?? 0);
+            if($user_id > 0) {
+                $stmt = $conn->prepare("UPDATE users SET is_suspended = 1 WHERE id = ?");
+                $stmt->bind_param("i", $user_id);
+                if($stmt->execute()) {
+                    $message = "<div class='alert alert-warning'>User Suspended.</div>";
+                }
+                $stmt->close();
             }
-            $stmt->close();
-        }
-    } elseif ($action == "unsuspend") {
-        $user_id = intval($_POST['user_id'] ?? 0);
-        if($user_id > 0) {
-            $stmt = $conn->prepare("UPDATE users SET is_suspended = 0 WHERE id = ?");
-            $stmt->bind_param("i", $user_id);
-            if($stmt->execute()) {
-                $message = "<div class='alert alert-success'>User Unsuspended.</div>";
+        } elseif ($action == "unsuspend") {
+            $user_id = intval($_POST['user_id'] ?? 0);
+            if($user_id > 0) {
+                $stmt = $conn->prepare("UPDATE users SET is_suspended = 0 WHERE id = ?");
+                $stmt->bind_param("i", $user_id);
+                if($stmt->execute()) {
+                    $message = "<div class='alert alert-success'>User Unsuspended.</div>";
+                }
+                $stmt->close();
             }
-            $stmt->close();
         }
     }
 }
