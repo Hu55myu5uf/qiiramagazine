@@ -47,6 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $check->close();
     }
 }
+}
 ?>
 
 <div class="container py-5" style="margin-top: 100px;">
