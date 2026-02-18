@@ -35,11 +35,16 @@ if (file_exists($db_file)) {
 }
 
 // --- Dynamic OG Tags for Post Pages ---
+$protocol = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http");
+$host = $_SERVER['HTTP_HOST'];
+$script_path = $_SERVER['SCRIPT_NAME'];
+$base_path = rtrim(dirname($script_path, $is_admin ? 2 : 1), '/\\');
+$site_base_url = $protocol . "://" . $host . $base_path;
+
 $og_title = "Qiira Magazine";
 $og_description = "Your source for History, Culture, Education, Business, and Politics insights";
-$og_image = "";
-$og_url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
-$site_base_url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://$_SERVER[HTTP_HOST]";
+$og_image = $site_base_url . "/images/qira/qiiralogo.png"; // Default image
+$og_url = $protocol . "://" . $host . $_SERVER['REQUEST_URI'];
 
 // Detect if on a post page
 if (isset($_GET['id']) && strpos($_SERVER['SCRIPT_NAME'], 'post.php') !== false && isset($conn)) {
