@@ -35,7 +35,11 @@ if (file_exists($db_file)) {
 }
 
 // --- Dynamic OG Tags for Post Pages ---
-$protocol = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http");
+$protocol = 'http';
+if ((isset($_SERVER['HTTPS']) && ($_SERVER['HTTPS'] === 'on' || $_SERVER['HTTPS'] === 1)) || 
+    (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https')) {
+    $protocol = 'https';
+}
 $host = $_SERVER['HTTP_HOST'];
 $script_path = $_SERVER['SCRIPT_NAME'];
 $base_path = rtrim(dirname($script_path, $is_admin ? 2 : 1), '/\\');
@@ -45,6 +49,7 @@ $og_title = "Qiira Magazine";
 $og_description = "Your source for History, Culture, Education, Business, and Politics insights";
 $og_image = $site_base_url . "/images/qira/qiiralogo.png"; // Default image
 $og_url = $protocol . "://" . $host . $_SERVER['REQUEST_URI'];
+$og_type = "website";
 
 // Detect if on a post page
 if (isset($_GET['id']) && strpos($_SERVER['SCRIPT_NAME'], 'post.php') !== false && isset($conn)) {
@@ -55,10 +60,13 @@ if (isset($_GET['id']) && strpos($_SERVER['SCRIPT_NAME'], 'post.php') !== false 
         $og_stmt->execute();
         $og_result = $og_stmt->get_result();
         if ($og_row = $og_result->fetch_assoc()) {
+            $og_type = "article";
             $og_title = htmlspecialchars($og_row['post_title']) . " | Qiira Magazine";
             $og_description = htmlspecialchars(substr(strip_tags($og_row['post_description']), 0, 160));
             if (!empty($og_row['post_image'])) {
-                $og_image = $site_base_url . "/" . ltrim($og_row['post_image'], '/');
+                // Ensure it's an absolute URL
+                $img_path = ltrim($og_row['post_image'], '/');
+                $og_image = $site_base_url . "/" . $img_path;
             }
         }
         $og_stmt->close();
@@ -74,17 +82,30 @@ if (isset($_GET['id']) && strpos($_SERVER['SCRIPT_NAME'], 'post.php') !== false 
     <meta name="keywords" content="magazine, news, history, culture, education, business, politics">
     <meta name="author" content="Qiira Company Limited">
     
+    <!-- Schema.org for Google -->
+    <meta itemprop="name" content="<?php echo $og_title; ?>">
+    <meta itemprop="description" content="<?php echo $og_description; ?>">
+    <?php if (!empty($og_image)): ?>
+    <meta itemprop="image" content="<?php echo $og_image; ?>">
+    <?php endif; ?>
+    
     <!-- Open Graph / Facebook -->
-    <meta property="og:type" content="article">
+    <meta property="og:site_name" content="Qiira Magazine">
+    <meta property="og:type" content="<?php echo $og_type; ?>">
     <meta property="og:url" content="<?php echo $og_url; ?>">
     <meta property="og:title" content="<?php echo $og_title; ?>">
     <meta property="og:description" content="<?php echo $og_description; ?>">
     <?php if (!empty($og_image)): ?>
     <meta property="og:image" content="<?php echo $og_image; ?>">
+    <meta property="og:image:secure_url" content="<?php echo $og_image; ?>">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="<?php echo $og_title; ?>">
     <?php endif; ?>
     
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@qiiramagazine">
     <meta name="twitter:title" content="<?php echo $og_title; ?>">
     <meta name="twitter:description" content="<?php echo $og_description; ?>">
     <?php if (!empty($og_image)): ?>
