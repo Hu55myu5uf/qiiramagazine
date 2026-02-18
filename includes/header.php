@@ -79,37 +79,37 @@ if (isset($_GET['id']) && strpos($_SERVER['SCRIPT_NAME'], 'post.php') !== false 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <!-- Primary Meta Tags -->
-    <title><?php echo $og_title; ?></title>
-    <meta name="title" content="<?php echo $og_title; ?>">
-    <meta name="description" content="<?php echo $og_description; ?>">
-    <meta name="keywords" content="magazine, news, history, culture, education, business, politics">
-    <meta name="author" content="Qiira Company Limited">
-    
-    <!-- Open Graph / Facebook -->
-    <meta property="og:site_name" content="Qiira Magazine">
-    <meta property="og:type" content="<?php echo $og_type; ?>">
-    <meta property="og:url" content="<?php echo $og_url; ?>">
-    <meta property="og:title" content="<?php echo $og_title; ?>">
-    <meta property="og:description" content="<?php echo $og_description; ?>">
+    <!-- Essential Social Meta Tags -->
     <?php if (!empty($og_image)): ?>
     <meta property="og:image" content="<?php echo $og_image; ?>">
     <meta property="og:image:secure_url" content="<?php echo $og_image; ?>">
     <meta property="og:image:type" content="image/png">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
-    <meta property="og:image:alt" content="<?php echo $og_title; ?>">
     <?php endif; ?>
-    
+    <meta property="og:title" content="<?php echo $og_title; ?>">
+    <meta property="og:description" content="<?php echo $og_description; ?>">
+    <meta property="og:url" content="<?php echo $og_url; ?>">
+    <meta property="og:type" content="<?php echo $og_type; ?>">
+    <meta property="og:site_name" content="Qiira Magazine">
+
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:site" content="@qiiramagazine">
-    <meta name="twitter:url" content="<?php echo $og_url; ?>">
     <meta name="twitter:title" content="<?php echo $og_title; ?>">
     <meta name="twitter:description" content="<?php echo $og_description; ?>">
     <?php if (!empty($og_image)): ?>
     <meta name="twitter:image" content="<?php echo $og_image; ?>">
     <?php endif; ?>
+
+    <!-- Canonical URL -->
+    <link rel="canonical" href="<?php echo $og_url; ?>">
+
+    <!-- Primary Meta Tags -->
+    <title><?php echo $og_title; ?></title>
+    <meta name="title" content="<?php echo $og_title; ?>">
+    <meta name="description" content="<?php echo $og_description; ?>">
+    <meta name="keywords" content="magazine, news, history, culture, education, business, politics">
+    <meta name="author" content="Qiira Company Limited">
 
     <!-- Schema.org for Google -->
     <meta itemprop="name" content="<?php echo $og_title; ?>">
