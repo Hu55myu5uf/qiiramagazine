@@ -72,21 +72,27 @@ if (isset($_GET['id']) && strpos($_SERVER['SCRIPT_NAME'], 'post.php') !== false 
         $og_stmt->close();
     }
 }
-?>
-<!DOCTYPE html>
+
+// Map extensions to MIME types
+$og_image_mime = "image/png";
+if (!empty($og_image)) {
+    $ext = pathinfo($og_image, PATHINFO_EXTENSION);
+    if (in_array(strtolower($ext), ['jpg', 'jpeg'])) $og_image_mime = "image/jpeg";
+    elseif (strtolower($ext) === 'gif') $og_image_mime = "image/gif";
+    elseif (strtolower($ext) === 'webp') $og_image_mime = "image/webp";
+}
+?><!DOCTYPE html>
 <html lang="en" prefix="og: http://ogp.me/ns#">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <!-- Essential Social Meta Tags -->
-    <?php if (!empty($og_image)): ?>
+    <!-- Social Media Meta Tags (WhatsApp & FB First) -->
     <meta property="og:image" content="<?php echo $og_image; ?>">
     <meta property="og:image:secure_url" content="<?php echo $og_image; ?>">
-    <meta property="og:image:type" content="image/png">
+    <meta property="og:image:type" content="<?php echo $og_image_mime; ?>">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
-    <?php endif; ?>
     <meta property="og:title" content="<?php echo $og_title; ?>">
     <meta property="og:description" content="<?php echo $og_description; ?>">
     <meta property="og:url" content="<?php echo $og_url; ?>">
@@ -104,14 +110,12 @@ if (isset($_GET['id']) && strpos($_SERVER['SCRIPT_NAME'], 'post.php') !== false 
     <!-- Canonical URL -->
     <link rel="canonical" href="<?php echo $og_url; ?>">
 
-    <!-- Primary Meta Tags -->
+    <!-- Metadata for Google -->
     <title><?php echo $og_title; ?></title>
     <meta name="title" content="<?php echo $og_title; ?>">
     <meta name="description" content="<?php echo $og_description; ?>">
     <meta name="keywords" content="magazine, news, history, culture, education, business, politics">
     <meta name="author" content="Qiira Company Limited">
-
-    <!-- Schema.org for Google -->
     <meta itemprop="name" content="<?php echo $og_title; ?>">
     <meta itemprop="description" content="<?php echo $og_description; ?>">
     <?php if (!empty($og_image)): ?>
